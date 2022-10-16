@@ -3,6 +3,8 @@ describe('authentication', () => {
     cy.refreshDatabase();
   });
 
+  it('can register a new user')
+
   it('can login', () => {
     cy.create('App\\Models\\User', {name: 'JohnDoe'})
       .then(user => {
@@ -25,4 +27,6 @@ describe('authentication', () => {
           .contains(user.name)
       })
   })
+
+  it('can logout')
 })
