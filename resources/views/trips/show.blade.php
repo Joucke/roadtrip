@@ -8,7 +8,7 @@
   <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
       <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-6 bg-white border-b border-gray-200">
+        <div class="p-6 flex justify-between bg-white border-b border-gray-200">
           <div id="user-list">
             @if ($trip->users->count() > 1)
               {{ __('Trip participants') }}:
@@ -32,9 +32,9 @@
             @endif
           </div>
           @unless ($users->isEmpty())
-          <form action="{{ route('trip-users.store', $trip) }}" method="POST" class="flex float-right">
+          <form action="{{ route('trip-users.store', $trip) }}" method="POST" class="flex">
             @csrf
-            <select name="user_id" id="user" class="rounded-l-md px-4 py-2 rounded-r-none">
+            <select name="user_id" id="user" class="rounded-l-md px-8 py-2 rounded-r-none">
               <option value="">-- {{ __('add user') }} --</option>
               @foreach ($users as $user)
               @unless(auth()->user()->is($user))

@@ -18,6 +18,8 @@ class TripUserController extends Controller
     public function store(Request $request, Trip $trip)
     {
         $trip->users()->attach($request->only('user_id'));
+        $trip->touch();
+
         return redirect()->to(route('trips.show', $trip));
     }
 
@@ -31,6 +33,7 @@ class TripUserController extends Controller
     public function destroy(Trip $trip, User $user)
     {
         $trip->users()->detach($user);
+        $trip->touch();
 
         return redirect()->to(route('trips.show', $trip));
     }
