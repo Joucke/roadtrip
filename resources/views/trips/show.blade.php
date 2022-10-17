@@ -11,24 +11,28 @@
         <div class="p-6 flex justify-between bg-white border-b border-gray-200">
           <div id="user-list">
             @if ($trip->users->count() > 1)
-              {{ __('Trip participants') }}:
-              @foreach ($trip->users as $user)
-                @if ($user->is(auth()->user()))
-                  @if ($loop->last)
-                  {{ $user->name }}
-                  @else
-                  {{ $user->name }},
-                  @endif
-                @else
-                  @if ($loop->last)
-                  {{ $user->name }}<form class="inline" action="{{ route('trip-users.destroy', [$trip, $user]) }}" method="POST">@method('DELETE') @csrf <button class="inline-flex items-center justify-center rounded-full bg-white text-red-500 border-2 border-red-500 w-6 h-6 p-2 font-bold" id="remove-user-{{ $user->id }}" type="submit">&times;</button></form>
-                  @else
-                  {{ $user->name }}<form class="inline" action="{{ route('trip-users.destroy', [$trip, $user]) }}" method="POST">@method('DELETE') @csrf <button class="inline-flex items-center justify-center rounded-full bg-white text-red-500 border-2 border-red-500 w-6 h-6 p-2 font-bold" id="remove-user-{{ $user->id }}" type="submit">&times;</button></form>,
-                  @endif
-                @endif
-              @endforeach
+            {{ __('Trip participants') }}:
+            @foreach ($trip->users as $user)
+            @if ($user->is(auth()->user()))
+            @if ($loop->last)
+            {{ $user->name }}
             @else
-              {{ __('You are the only participant') }}
+            {{ $user->name }},
+            @endif
+            @else
+            @if ($loop->last)
+            <div class="group inline">{{ $user->name }}
+              <form class="inline" action="{{ route('trip-users.destroy', [$trip, $user]) }}" method="POST">@method('DELETE') @csrf <button class="hidden group-hover:inline-flex items-center justify-center rounded-full bg-white text-red-500 border-2 border-red-500 w-6 h-6 p-2 font-bold" id="remove-user-{{ $user->id }}" type="submit">&times;</button></form>
+            </div>
+            @else
+            <div class="group inline">{{ $user->name }}
+              <form class="inline" action="{{ route('trip-users.destroy', [$trip, $user]) }}" method="POST">@method('DELETE') @csrf <button class="hidden group-hover:inline-flex items-center justify-center rounded-full bg-white text-red-500 border-2 border-red-500 w-6 h-6 p-2 font-bold" id="remove-user-{{ $user->id }}" type="submit">&times;</button></form>,
+            </div>
+            @endif
+            @endif
+            @endforeach
+            @else
+            {{ __('You are the only participant') }}
             @endif
           </div>
           @unless ($users->isEmpty())
@@ -47,6 +51,56 @@
             </x-primary-button>
           </form>
           @endunless
+        </div>
+      </div>
+      <div x-data="{
+        trip: {{ $trip }},
+        regions: [],
+        showForm: false,
+        newRegion: {title: ''},
+      }" class="mt-6 bg-white overflow-hidden shadow-sm sm:rounded-lg">
+        <div class="p-6 flex justify-between bg-white border-b border-gray-200">
+          <template x-if="! showForm">
+            <x-primary-button x-on:click="showForm = true" id="add-region">add region</x-primary-button>
+          </template>
+          <template x-if="showForm">
+            <div>
+              <x-input-label for="region_title" :value="__('Region')" />
+              <x-text-input autofocus x-init="$watch('newRegion', r => {
+                clearTimeout($store.timeout)
+                $store.timeout = setTimeout(() => {
+                  fetch(`/geocode-search?q=${r.title}`)
+                    .then(resp => resp.json())
+                    .then(data => {
+                      regions = data.filter(r => ['natural', 'boundary'].includes(r.class))
+                    })
+                }, 300);
+              })" class="mt-1" type="text" id="region_title" x-model="newRegion.title">
+              </x-text-input>
+              <div id="region_result" class="flex gap-3">
+                <template x-for="region in regions">
+                  <button
+                    class="rounded-full bg-green-300 px-4 py-2"
+                    x-bind:title="region.display_name"
+                    x-text="region.display_name.split(', ')[0]"
+                    x-on:click="() => {
+                      fetch('{{ route('trips.regions.store', $trip) }}', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({region, _token: '{{ csrf_token() }}'})
+                      }).then(r => console.log(r));
+                    }"></button>
+                </template>
+              </div>
+            </div>
+          </template>
+          <div id="regions">
+            <template x-for="region in trip.regions">
+              <span x-text="region"></span>
+            </template>
+          </div>
         </div>
       </div>
     </div>
