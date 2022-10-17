@@ -55,6 +55,7 @@ class TripController extends Controller
      */
     public function show(Trip $trip)
     {
+        $trip->load('regions');
         $users = User::query()
             ->whereNotIn('id', $trip->users->pluck('id'))
             ->get();

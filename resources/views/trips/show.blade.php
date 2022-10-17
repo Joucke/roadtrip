@@ -59,38 +59,50 @@
         showForm: false,
         newRegion: {title: ''},
       }" class="mt-6 bg-white overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-6 flex justify-between bg-white border-b border-gray-200">
+        <div class="p-6 justify-between bg-white border-b border-gray-200">
           <template x-if="! showForm">
             <x-primary-button x-on:click="showForm = true" id="add-region">add region</x-primary-button>
           </template>
           <template x-if="showForm">
-            <div>
-              <x-input-label for="region_title" :value="__('Region')" />
-              <x-text-input autofocus x-init="$watch('newRegion', r => {
-                clearTimeout($store.timeout)
-                $store.timeout = setTimeout(() => {
-                  fetch(`/geocode-search?q=${r.title}`)
-                    .then(resp => resp.json())
-                    .then(data => {
-                      regions = data.filter(r => ['natural', 'boundary'].includes(r.class))
-                    })
-                }, 300);
-              })" class="mt-1" type="text" id="region_title" x-model="newRegion.title">
-              </x-text-input>
+            <div class="flex gap-3 items-end">
+              <div>
+                <x-input-label for="region_title" :value="__('Region')" />
+                <x-text-input autofocus x-init="$watch('newRegion', r => {
+                  clearTimeout($store.timeout)
+                  $store.timeout = setTimeout(() => {
+                    if (r.title == '') {
+                      regions = []
+                      return
+                    }
+                    fetch(`/geocode-search?q=${r.title}`)
+                      .then(resp => resp.json())
+                      .then(data => {
+                        console.log(data)
+                        regions = data.filter(r => ['natural', 'boundary'].includes(r.class) || ['region', 'mountain_range'].includes(r.type))
+                      })
+                  }, 300);
+                })" class="mt-1" type="text" id="region_title" x-model="newRegion.title">
+                </x-text-input>
+              </div>
               <div id="region_result" class="flex gap-3">
                 <template x-for="region in regions">
-                  <button
-                    class="rounded-full bg-green-300 px-4 py-2"
-                    x-bind:title="region.display_name"
-                    x-text="region.display_name.split(', ')[0]"
-                    x-on:click="() => {
+                  <button class="rounded-full bg-green-300 px-4 py-2" x-bind:title="region.display_name" x-text="region.display_name.split(', ')[0]" x-on:mouseover="() => {
+                      console.dir({region})
+                    }" x-on:click="() => {
+                      const data = {
+                        title: region.display_name.split(', ')[0],
+                        lat: region.lat,
+                        long: region.lon,
+                        box: JSON.stringify(region.boundingbox),
+                      }
                       fetch('{{ route('trips.regions.store', $trip) }}', {
                         method: 'POST',
                         headers: {
                           'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({region, _token: '{{ csrf_token() }}'})
-                      }).then(r => console.log(r));
+                        body: JSON.stringify({data, _token: '{{ csrf_token() }}'})
+                      }).then(resp => resp.json())
+                      .then(d => trip.regions = d);
                     }"></button>
                 </template>
               </div>
@@ -98,7 +110,19 @@
           </template>
           <div id="regions">
             <template x-for="region in trip.regions">
-              <span x-text="region"></span>
+              <div class="flex py-2">
+                <p class="w-1/5" x-text="region.title"></p>
+                <input class="text-xs rounded-lg" type="datetime-local" step="1" name="arrival_at" x-bind:value="region.arrival_at" x-on:change="({target}) => {
+                    fetch('{{ route('trips.regions.store', $trip) }}/'+region.id, {
+                      method: 'PATCH',
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({arrival_at: target.value, _token: '{{ csrf_token() }}'}),
+                    }).then(response => response.json())
+                    .then(data => trip.regions = data)
+                  }">
+              </div>
             </template>
           </div>
         </div>
