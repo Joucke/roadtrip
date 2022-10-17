@@ -18,6 +18,7 @@
 import './laravel-commands';
 import './laravel-routes';
 import './assertions';
+import 'cypress-real-events/support'
 
 before(() => {
     cy.task('activateCypressEnvFile', {}, { log: false });

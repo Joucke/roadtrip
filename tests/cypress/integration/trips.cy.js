@@ -5,7 +5,7 @@ describe('trips - a logged in user', () => {
   });
 
   it('can create a new trip', () => {
-    cy.visit('/dashboard')
+    cy.visit(Cypress.Laravel.route('dashboard'))
 
       .get('a#create-trip')
       .click()
@@ -27,34 +27,39 @@ describe('trips - a logged in user', () => {
       .php(`
         App\\Models\\User::all();
       `).then(users => {
-      cy.visit('/trips/1')
+        cy.visit(Cypress.Laravel.route('trips.show', { trip: 1 }))
 
-        .get('select#user')
-        .select('2')
+          .get('select#user')
+          .select('2')
 
-        .get('button#add-user')
-        .click()
+          .get('button#add-user')
+          .click()
 
-      users.forEach(u => {
-        cy.get('body')
-          .contains(u.name)
-      })
+        users.forEach(u => {
+          cy.get('body')
+            .contains(u.name)
+        })
     })
   })
 
-  it.only('can remove users from a trip', () => {
+  it('can remove users from a trip', () => {
     cy.seed('TripUserSeeder')
       .php(`
         tap(App\\Models\\Trip::first(), fn($t) => $t->users()->attach(2));
       `).php(`
         App\\Models\\User::all();
       `).then(users => {
-        cy.visit('/trips/1')
+        cy.visit(Cypress.Laravel.route('trips.show', { trip: 1 }))
+
+          .get('div')
+          .contains(users.find(u => u.id == 2).name)
+          .closest('div')
+          .realHover()
 
           .get('button#remove-user-2')
           .click()
 
-          .assertRedirect('/trips/1')
+          .assertRedirect(Cypress.Laravel.route('trips.show', { trip: 1 }))
 
         cy.contains('div#user-list', users.find(u => u.id == 2).name)
           .should('not.exist')
@@ -66,7 +71,7 @@ describe('trips - a logged in user', () => {
       .php(`
         App\\Models\\Trip::latest('updated_at')->first();
       `).then(trip => {
-        cy.visit('/dashboard')
+        cy.visit(Cypress.Laravel.route('dashboard'))
           .get(`a#continue-${trip.id}`)
           .click()
 
