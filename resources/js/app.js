@@ -9,6 +9,14 @@ Alpine.start();
 import * as L from 'leaflet'
 import "leaflet.markercluster";
 
+import iconUrl from 'leaflet/dist/images/marker-icon.png'
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
+
+const markerIcon = {
+  iconUrl,
+  iconRetinaUrl,
+}
+
 Alpine.store('map', {
   map: null,
   show(trip) {
@@ -35,7 +43,7 @@ Alpine.store('map', {
 
     trip.regions.forEach(r => {
       const m = L.markerClusterGroup()
-      m.addLayer(L.marker([r.lat, r.long]))
+      m.addLayer(L.marker([r.lat, r.long], markerIcon))
       this.map.addLayer(m)
     })
   },
@@ -55,7 +63,7 @@ Alpine.store('map', {
 
     trip.regions.forEach(r => {
       const m = L.markerClusterGroup()
-      m.addLayer(L.marker([r.lat, r.long]))
+      m.addLayer(L.marker([r.lat, r.long], markerIcon))
       this.map.addLayer(m)
     })
   }
