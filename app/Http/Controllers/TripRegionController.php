@@ -33,11 +33,19 @@ class TripRegionController extends Controller
         $data = $request->validate([
             'arrival_at' => 'date',
             'departure_at' => 'date',
+            'title' => 'max:255',
         ]);
         foreach($data as $field => $value) {
             $region->$field = $value;
         }
         $region->save();
         return $trip->fresh()->regions;
+    }
+
+    public function destroy(Request $request, Trip $trip, Region $region)
+    {
+        $region->delete();
+
+        return redirect()->back();
     }
 }

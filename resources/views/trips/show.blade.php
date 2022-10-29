@@ -55,9 +55,9 @@
       </div>
       <div x-data="{
         trip: {{ $trip }},
-        regions: [],
+        foundRegions: [],
         showForm: false,
-        newRegion: {title: ''},
+        newRegion: '',
       }" class="mt-6 bg-white overflow-hidden shadow-sm sm:rounded-lg">
         <div class="p-6 justify-between bg-white border-b border-gray-200">
           <template x-if="! showForm">
@@ -66,29 +66,27 @@
           <template x-if="showForm">
             <div class="flex gap-3 items-end">
               <div>
-                <x-input-label for="region_title" :value="__('Region')" />
+                <x-input-label for="region-title" :value="__('Region')" />
                 <x-text-input autofocus x-init="$watch('newRegion', r => {
                   clearTimeout($store.timeout)
                   $store.timeout = setTimeout(() => {
-                    if (r.title == '') {
-                      regions = []
+                    if (r == '') {
+                      foundRegions = []
                       return
                     }
-                    fetch(`/geocode-search?q=${r.title}`)
+                    fetch(`/geocode-search?q=${r}`)
                       .then(resp => resp.json())
                       .then(data => {
                         console.log(data)
-                        regions = data.filter(r => ['natural', 'boundary'].includes(r.class) || ['region', 'mountain_range'].includes(r.type))
+                        foundRegions = data.length > 3 ? data.filter(r => ['natural', 'boundary'].includes(r.class) || ['region', 'mountain_range'].includes(r.type)) : data
                       })
                   }, 300);
-                })" class="mt-1" type="text" id="region_title" x-model="newRegion.title">
+                })" class="mt-1" type="text" id="region-title" x-model="newRegion">
                 </x-text-input>
               </div>
-              <div id="region_result" class="flex gap-3">
-                <template x-for="region in regions">
-                  <button class="rounded-full bg-green-300 px-4 py-2" x-bind:title="region.display_name" x-text="region.display_name.split(', ')[0]" x-on:mouseover="() => {
-                      console.dir({region})
-                    }" x-on:click="() => {
+              <div id="region-result" class="flex gap-3">
+                <template x-for="region in foundRegions">
+                  <button class="rounded-full bg-green-300 px-4 py-2" x-bind:title="region.display_name" x-text="region.display_name.split(', ')[0]" x-on:click="() => {
                       const data = {
                         title: region.display_name.split(', ')[0],
                         lat: region.lat,
@@ -109,9 +107,10 @@
             </div>
           </template>
           <div id="regions">
+            <div id="map" style="width: 50vw; height: 50vh" x-init="$watch('trip', (trip => $store.map.update(trip))); $nextTick(() => $store.map.show(trip));"></div>
             <template x-for="region in trip.regions">
-              <div class="flex py-2">
-                <p class="w-1/5" x-text="region.title"></p>
+              <div class="flex py-2 gap-3 items-center group">
+                <p @blur="e => $store.region.patch('{{ route('trips.regions.store', $trip) }}/'+region.id, '{{ csrf_token() }}', e.target.innerText).then(data => trip.regions = data)" contenteditable="true" @input="(e) => region.title = e.target.innerText" x-bind:id="`region-title-${region.id}`" class="w-1/5" x-text="region.title"></p>
                 <input class="text-xs rounded-lg" type="datetime-local" step="1" name="arrival_at" x-bind:value="region.arrival_at" x-on:change="({target}) => {
                     fetch('{{ route('trips.regions.store', $trip) }}/'+region.id, {
                       method: 'PATCH',
@@ -122,6 +121,12 @@
                     }).then(response => response.json())
                     .then(data => trip.regions = data)
                   }">
+                <form x-bind:action="'{{ route('trips.regions.store', $trip) }}/'+region.id" method="post">
+                  @csrf
+                  @method('DELETE')
+                  <button class="hidden group-hover:inline-flex items-center justify-center rounded-full bg-white text-red-500 border-2 border-red-500 w-6 h-6 p-2 font-bold">&times;</button>
+                </form>
+                <button class="items-center border-2 px-4 py-1 rounded-lg">{{ __("add place") }}</button>
               </div>
             </template>
           </div>

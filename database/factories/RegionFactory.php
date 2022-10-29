@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Trip;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,7 +18,11 @@ class RegionFactory extends Factory
     public function definition()
     {
         return [
-            //
+            'title' => fake()->words(3, true),
+            'lat' => fake()->latitude(),
+            'long' => fake()->longitude(),
+            'box' => '{}',
+            'trip_id' => Trip::factory(),
         ];
     }
 }

@@ -21,8 +21,8 @@ return new class extends Migration
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
             $table->string('title');
-            $table->float('lat');
-            $table->float('long');
+            $table->float('lat', 10, 6);
+            $table->float('long', 10, 6);
             $table->json('box');
             $table->timestamp('arrival_at')->nullable();
             $table->timestamp('departure_at')->nullable();
