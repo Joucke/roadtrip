@@ -4,6 +4,7 @@ use App\Models\Trip;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TripController;
 use App\Http\Controllers\TypeController;
+use App\Http\Controllers\PlaceController;
 use App\Http\Controllers\GeocodeController;
 use App\Http\Controllers\TripUserController;
 use App\Http\Controllers\TripRegionController;
@@ -34,6 +35,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('geocode-reverse', [GeocodeController::class, 'reverse'])->name('geocode-reverse');
     Route::resource('trips', TripController::class);
     Route::resource('trips.regions', TripRegionController::class);
+    Route::resource('places', PlaceController::class);
     Route::resource('types', TypeController::class);
     Route::post('/trips/{trip}/users', [TripUserController::class, 'store'])->name('trip-users.store');
     Route::delete('/trips/{trip}/users/{user}', [TripUserController::class, 'destroy'])->name('trip-users.destroy');
