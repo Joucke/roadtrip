@@ -11,12 +11,18 @@ import "leaflet.markercluster";
 
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
 
-const markerIcon = {
-  iconUrl,
-  iconRetinaUrl,
-}
-
+// const markerIcon = L.icon({
+//   ...L.Icon.Default,
+//   iconUrl,
+//   iconRetinaUrl,
+// })
+// console.log(L.Icon.Default.prototype.options)
+L.Icon.Default.prototype.options.iconUrl = iconUrl;
+L.Icon.Default.prototype.options.iconRetinaUrl = iconRetinaUrl;
+L.Icon.Default.prototype.options.shadowUrl = shadowUrl;
+L.Icon.Default.imagePath = '';
 Alpine.store('map', {
   map: null,
   show(trip) {
@@ -43,8 +49,7 @@ Alpine.store('map', {
 
     trip.regions.forEach(r => {
       const m = L.markerClusterGroup()
-      console.log(markerIcon)
-      m.addLayer(L.marker([r.lat, r.long], markerIcon))
+      m.addLayer(L.marker([r.lat, r.long]))//, {icon: markerIcon}))
       this.map.addLayer(m)
     })
   },
@@ -64,8 +69,7 @@ Alpine.store('map', {
 
     trip.regions.forEach(r => {
       const m = L.markerClusterGroup()
-      console.log(markerIcon)
-      m.addLayer(L.marker([r.lat, r.long], markerIcon))
+      m.addLayer(L.marker([r.lat, r.long]))//, {icon: markerIcon}))
       this.map.addLayer(m)
     })
   }
