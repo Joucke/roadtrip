@@ -43,6 +43,7 @@ Alpine.store('map', {
 
     trip.regions.forEach(r => {
       const m = L.markerClusterGroup()
+      console.log(markerIcon)
       m.addLayer(L.marker([r.lat, r.long], markerIcon))
       this.map.addLayer(m)
     })
@@ -63,6 +64,7 @@ Alpine.store('map', {
 
     trip.regions.forEach(r => {
       const m = L.markerClusterGroup()
+      console.log(markerIcon)
       m.addLayer(L.marker([r.lat, r.long], markerIcon))
       this.map.addLayer(m)
     })
