@@ -49,6 +49,7 @@
                                 {{ __('Log Out') }}
                             </x-dropdown-link>
                         </form>
+                        <x-dropdown-link href="{{ route('types.create') }}">Add Place Type</x-dropdown-link>
                     </x-slot>
                 </x-dropdown>
             </div>
