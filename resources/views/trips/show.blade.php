@@ -10,6 +10,7 @@
       <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
         <div class="p-6 flex justify-between bg-white border-b border-gray-200">
           <div id="user-list">
+            <!-- TODO: make this more interactive, alpine it -->
             @if ($trip->users->count() > 1)
             {{ __('Trip participants') }}:
             @foreach ($trip->users as $user)
@@ -55,7 +56,6 @@
       </div>
       <div x-data="{
         trip: {{ $trip }},
-        foundRegions: [],
         showForm: false,
         newRegion: '',
       }" class="mt-6 bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -67,41 +67,19 @@
             <div class="flex gap-3 items-end">
               <div>
                 <x-input-label for="region-title" :value="__('Region')" />
-                <x-text-input autofocus x-init="$watch('newRegion', r => {
-                  clearTimeout($store.timeout)
-                  $store.timeout = setTimeout(() => {
-                    if (r == '') {
-                      foundRegions = []
-                      return
-                    }
-                    fetch(`/geocode-search?q=${r}`)
-                      .then(resp => resp.json())
-                      .then(data => {
-                        console.log(data)
-                        foundRegions = data.length > 3 ? data.filter(r => ['natural', 'boundary'].includes(r.class) || ['region', 'mountain_range'].includes(r.type)) : data
-                      })
-                  }, 300);
-                })" class="mt-1" type="text" id="region-title" x-model="newRegion">
+                <x-text-input autofocus x-init="$watch('newRegion', title => $store.search.region(title))" class="mt-1" type="text" id="region-title" x-model="newRegion">
                 </x-text-input>
               </div>
               <div id="region-result" class="flex gap-3">
-                <template x-for="region in foundRegions">
-                  <button class="rounded-full bg-green-300 px-4 py-2" x-bind:title="region.display_name" x-text="region.display_name.split(', ')[0]" x-on:click="() => {
-                      const data = {
-                        title: region.display_name.split(', ')[0],
-                        lat: region.lat,
-                        long: region.lon,
-                        box: JSON.stringify(region.boundingbox),
-                      }
-                      fetch('{{ route('trips.regions.store', $trip) }}', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({data, _token: '{{ csrf_token() }}'})
-                      }).then(resp => resp.json())
-                      .then(d => trip.regions = d);
-                    }"></button>
+                <template x-for="region in $store.search.results.regions">
+                  <button class="rounded-full bg-green-300 px-4 py-2"
+                    x-bind:title="region.display_name"
+                    x-text="region.display_name.split(', ')[0]"
+                    @click="$store.region.create(
+                      '{{ route('trips.regions.store', $trip) }}',
+                      '{{ csrf_token() }}',
+                      region
+                    ).then(data => trip.regions = data)"></button>
                 </template>
               </div>
             </div>
@@ -109,18 +87,18 @@
           <div id="regions">
             <div id="map" style="width: 50vw; height: 50vh" x-init="$watch('trip', (trip => $store.map.update(trip))); $nextTick(() => $store.map.show(trip));"></div>
             <template x-for="region in trip.regions">
-              <div class="flex py-2 gap-3 items-center group">
-                <p @blur="e => $store.region.patch('{{ route('trips.regions.store', $trip) }}/'+region.id, '{{ csrf_token() }}', e.target.innerText).then(data => trip.regions = data)" contenteditable="true" @input="(e) => region.title = e.target.innerText" x-bind:id="`region-title-${region.id}`" class="w-1/5" x-text="region.title"></p>
-                <input class="text-xs rounded-lg" type="datetime-local" step="1" name="arrival_at" x-bind:value="region.arrival_at" x-on:change="({target}) => {
-                    fetch('{{ route('trips.regions.store', $trip) }}/'+region.id, {
-                      method: 'PATCH',
-                      headers: {
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({arrival_at: target.value, _token: '{{ csrf_token() }}'}),
-                    }).then(response => response.json())
-                    .then(data => trip.regions = data)
-                  }">
+              <div cy-id="region-row" class="flex py-2 gap-3 items-center group">
+                <p @blur="e => $store.region.update(
+                  '{{ route('trips.regions.store', $trip) }}/'+region.id,
+                  '{{ csrf_token() }}',
+                  { title: e.target.innerText}
+                ).then(data => trip.regions = data)" contenteditable="true" @input="(e) => region.title = e.target.innerText" x-bind:id="`region-title-${region.id}`" class="w-1/5" x-text="region.title"></p>
+                <input class="text-xs rounded-lg" x-bind:id="'arrival-at-' + region.id" type="datetime-local" step="1" name="arrival_at" x-bind:value="region.arrival_at"
+                  x-on:change="e => $store.region.update(
+                    '{{ route('trips.regions.store', $trip) }}/'+region.id,
+                    '{{ csrf_token() }}',
+                    {arrival_at: e.target.value}
+                  ).then(data => trip.regions = data)">
                 <form x-bind:action="'{{ route('trips.regions.store', $trip) }}/'+region.id" method="post">
                   @csrf
                   @method('DELETE')

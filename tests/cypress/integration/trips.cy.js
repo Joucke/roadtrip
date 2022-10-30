@@ -23,7 +23,8 @@ describe('trips - a logged in user', () => {
   })
 
   it('can invite users to a trip', () => {
-    cy.seed('TripUserSeeder')
+    cy.seed('TripSeeder')
+      .seed('UserSeeder')
       .php(`
         App\\Models\\User::all();
       `).then(users => {
@@ -43,7 +44,8 @@ describe('trips - a logged in user', () => {
   })
 
   it('can remove users from a trip', () => {
-    cy.seed('TripUserSeeder')
+    cy.seed('TripSeeder')
+      .seed('UserSeeder')
       .php(`
         tap(App\\Models\\Trip::first(), fn($t) => $t->users()->attach(2));
       `).php(`
@@ -67,7 +69,7 @@ describe('trips - a logged in user', () => {
   })
 
   it('can see their last updated trip on their dashboard', () => {
-    cy.seed('TripUserSeeder')
+    cy.seed('TripSeeder')
       .php(`
         App\\Models\\Trip::latest('updated_at')->first();
       `).then(trip => {

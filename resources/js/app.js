@@ -23,6 +23,7 @@ L.Icon.Default.prototype.options.iconUrl = iconUrl;
 L.Icon.Default.prototype.options.iconRetinaUrl = iconRetinaUrl;
 L.Icon.Default.prototype.options.shadowUrl = shadowUrl;
 L.Icon.Default.imagePath = '';
+
 Alpine.store('map', {
   map: null,
   show(trip) {
@@ -76,13 +77,50 @@ Alpine.store('map', {
 })
 
 Alpine.store('region', {
-  patch(url, csrf, title) {
+  create(url, csrf, region) {
+    const data = {
+      title: region.display_name.split(', ')[0],
+      lat: region.lat,
+      long: region.lon,
+      box: JSON.stringify(region.boundingbox),
+    }
+    return fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({data, _token: csrf})
+    }).then(response => response.json())
+  },
+  update(url, csrf, data) {
     return fetch(url, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ title, _token: csrf }),
+      body: JSON.stringify({ ...data, _token: csrf }),
     }).then(response => response.json())
   }
+})
+
+Alpine.store('search', {
+  timeout: null,
+  results: {
+    regions: [],
+  },
+  region(title) {
+    clearTimeout(this.timeout)
+    this.timeout = setTimeout(() => {
+      if (title == '') {
+        this.results.regions = []
+        return
+      }
+      fetch(`/geocode-search?q=${title}`)
+        .then(resp => resp.json())
+        .then(data => {
+          this.results.regions = data.length > 3 ? data.filter(r => ['natural', 'boundary'].includes(r.class) || ['region', 'mountain_range'].includes(r.type)) : data
+        })
+    }, 300);
+  }
+
 })
